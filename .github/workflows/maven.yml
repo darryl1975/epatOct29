@@ -24,7 +24,7 @@ jobs:
     needs: build-test
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@master
     - name: Run Snyk to check for vulnerabilities
       uses: snyk/actions/maven@master
       env:
@@ -74,7 +74,7 @@ jobs:
     - name: Build Docker image for scanning
       run: docker build --tag d13revision:${{ github.sha }} .
     - name: Scan image and save report
-      uses: aquasecurity/trivy-action@v0.31.0
+      uses: aquasecurity/trivy-action@v0.36.0
       with:
         image-ref: d13revision:${{ github.sha }}
         format: json
@@ -87,7 +87,7 @@ jobs:
           | select(startswith("CVE-"))] | unique | .[]' \
           trivy-results.json > .trivyignore
     - name: Rescan image using .trivyignore
-      uses: aquasecurity/trivy-action@v0.31.0
+      uses: aquasecurity/trivy-action@v0.36.0
       with:
         image-ref: d13revision:${{ github.sha }}
         trivyignores: .trivyignore
