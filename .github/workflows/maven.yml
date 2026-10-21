@@ -74,7 +74,7 @@ jobs:
     - name: Build Docker image for scanning
       run: docker build --tag d13revision:${{ github.sha }} .
     - name: Scan image and save report
-      uses: aquasecurity/trivy-action@0.31.0
+      uses: aquasecurity/trivy-action@v0.31.0
       with:
         image-ref: d13revision:${{ github.sha }}
         format: json
@@ -87,7 +87,7 @@ jobs:
           | select(startswith("CVE-"))] | unique | .[]' \
           trivy-results.json > .trivyignore
     - name: Rescan image using .trivyignore
-      uses: aquasecurity/trivy-action@0.31.0
+      uses: aquasecurity/trivy-action@v0.31.0
       with:
         image-ref: d13revision:${{ github.sha }}
         trivyignores: .trivyignore
