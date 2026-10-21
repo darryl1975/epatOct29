@@ -24,9 +24,36 @@ jobs:
     needs: build-test
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v4
     - name: Run Snyk to check for vulnerabilities
       uses: snyk/actions/maven@master
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       with:
         args: --severity-threshold=high
+
+  telegram-notification:
+    needs: snyk-security-scan
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Send Snyk scan result to Telegram
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        SNYK_RESULT: ${{ needs.snyk-security-scan.result }}
+        WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        set -euo pipefail
+        if [[ -z "$TELEGRAM_BOT_TOKEN" || -z "$TELEGRAM_CHAT_ID" ]]; then
+          echo "TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID secrets must be configured."
+          exit 1
+        fi
+
+        message="Snyk security scan ${SNYK_RESULT} for ${GITHUB_REPOSITORY}. Run: ${WORKFLOW_RUN_URL}"
+        payload=$(jq -n --arg chat_id "$TELEGRAM_CHAT_ID" --arg text "$message" \
+          '{chat_id: $chat_id, text: $text}')
+        curl --silent --show-error --fail-with-body \
+          --header "Content-Type: application/json" \
+          --data "$payload" \
+          "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage"
