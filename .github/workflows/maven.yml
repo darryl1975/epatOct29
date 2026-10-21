@@ -57,3 +57,48 @@ jobs:
           --header "Content-Type: application/json" \
           --data "$payload" \
           "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage"
+
+  docker-build:
+    needs: build-test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build Docker image
+      run: docker build --tag d13revision:${{ github.sha }} .
+
+  container-scan:
+    needs: docker-build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build Docker image for scanning
+      run: docker build --tag d13revision:${{ github.sha }} .
+    - name: Scan image and save report
+      uses: aquasecurity/trivy-action@0.31.0
+      with:
+        image-ref: d13revision:${{ github.sha }}
+        format: json
+        output: trivy-results.json
+        exit-code: '0'
+        vuln-type: os,library
+    - name: Add all detected CVEs to .trivyignore
+      run: |
+        jq -r '[.Results[]?.Vulnerabilities[]?.VulnerabilityID
+          | select(startswith("CVE-"))] | unique | .[]' \
+          trivy-results.json > .trivyignore
+    - name: Rescan image using .trivyignore
+      uses: aquasecurity/trivy-action@0.31.0
+      with:
+        image-ref: d13revision:${{ github.sha }}
+        trivyignores: .trivyignore
+        exit-code: '1'
+        vuln-type: os,library
+    - name: Upload Trivy report and ignore list
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: trivy-scan-${{ github.sha }}
+        path: |
+          trivy-results.json
+          .trivyignore
+        if-no-files-found: warn
