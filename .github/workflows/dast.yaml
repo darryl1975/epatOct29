@@ -12,9 +12,11 @@ jobs:
     steps:
       - name: Scan endpoints with OWASP ZAP
         run: |
+          mkdir -p "$RUNNER_TEMP/zap-home"
           docker run --rm --network host \
             --user "$(id -u):$(id -g)" \
-            --env HOME=/tmp \
+            --env HOME=/zap/home \
+            --volume "$RUNNER_TEMP/zap-home:/zap/home:rw" \
             --volume "$GITHUB_WORKSPACE:/zap/wrk/:rw" \
             ghcr.io/zaproxy/zaproxy:stable \
             zap-baseline.py \
