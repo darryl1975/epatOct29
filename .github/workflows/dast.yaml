@@ -13,6 +13,8 @@ jobs:
       - name: Scan endpoints with OWASP ZAP
         run: |
           docker run --rm --network host \
+            --user "$(id -u):$(id -g)" \
+            --env HOME=/tmp \
             --volume "$GITHUB_WORKSPACE:/zap/wrk/:rw" \
             ghcr.io/zaproxy/zaproxy:stable \
             zap-baseline.py \
