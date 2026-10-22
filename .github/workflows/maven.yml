@@ -125,7 +125,7 @@ jobs:
 
   deploy-vercel:
     needs: push-image
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    if: ${{ always() && needs.push-image.result == 'success' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
