@@ -46,4 +46,4 @@ Now that you have all three values, add them safely to your repository:
 	• VERCEL_ORG_ID
 	• VERCEL_PROJECT_ID
 
-Once those are saved, your next git push to your deployment branch will kick off the build seamlessly.
+Once those are saved, your next git push to your deployment branch will kick off the build seamlessly._

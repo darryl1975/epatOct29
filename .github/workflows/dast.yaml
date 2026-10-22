@@ -1,0 +1,32 @@
+name: DAST
+
+on:
+  workflow_run:
+    workflows: ["Java CI with Maven"]
+    types: [completed]
+    branches: ["main"]
+
+jobs:
+  fast-security-scanning:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Scan endpoints with OWASP ZAP
+        run: |
+          docker run --rm --network host \
+            --volume "$GITHUB_WORKSPACE:/zap/wrk/:rw" \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py \
+            -t https://cicd-epat-base-liard.vercel.app \
+            -m 5 \
+            -j \
+            -r zap-report.html
+
+      - name: Upload ZAP report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-dast-report
+          path: zap-report.html
+          if-no-files-found: warn
