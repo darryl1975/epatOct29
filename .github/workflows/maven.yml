@@ -122,3 +122,34 @@ jobs:
         tags: |
           ${{ secrets.DOCKERHUB_USERNAME }}/d13revision:1.0.0
           ${{ secrets.DOCKERHUB_USERNAME }}/d13revision:${{ github.sha }}
+
+  deploy-vercel:
+    needs: push-image
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+    - name: Install Vercel CLI
+      run: npm install --global vercel@latest
+    - name: Link Vercel project
+      env:
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      run: |
+        set -euo pipefail
+        : "${VERCEL_ORG_ID:?Set the VERCEL_ORG_ID GitHub Actions secret}"
+        : "${VERCEL_PROJECT_ID:?Set the VERCEL_PROJECT_ID GitHub Actions secret}"
+        mkdir -p .vercel
+        jq -n --arg orgId "$VERCEL_ORG_ID" --arg projectId "$VERCEL_PROJECT_ID" \
+          '{orgId: $orgId, projectId: $projectId}' > .vercel/project.json
+    - name: Deploy cicd-epat-base to Vercel
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      run: |
+        set -euo pipefail
+        : "${VERCEL_TOKEN:?Set the VERCEL_TOKEN GitHub Actions secret}"
+        vercel deploy --prod --yes --token "$VERCEL_TOKEN"
