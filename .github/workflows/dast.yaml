@@ -21,6 +21,7 @@ jobs:
             -t https://cicd-epat-base-liard.vercel.app \
             -m 5 \
             -j \
+            -I \
             -r zap-report.html
 
       - name: Upload ZAP report
