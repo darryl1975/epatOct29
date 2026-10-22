@@ -12,11 +12,9 @@ jobs:
     steps:
       - name: Scan endpoints with OWASP ZAP
         run: |
-          mkdir -p "$RUNNER_TEMP/zap-home"
+          # The image runs as its built-in "zap" user, which needs write access to the mounted workspace
+          chmod a+rwx "$GITHUB_WORKSPACE"
           docker run --rm --network host \
-            --user "$(id -u):$(id -g)" \
-            --env HOME=/zap/home \
-            --volume "$RUNNER_TEMP/zap-home:/zap/home:rw" \
             --volume "$GITHUB_WORKSPACE:/zap/wrk/:rw" \
             ghcr.io/zaproxy/zaproxy:stable \
             zap-baseline.py \
